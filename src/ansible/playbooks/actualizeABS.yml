@@ -1,11 +1,30 @@
 ---
-- name: Проверка соединения с хостами
-  hosts: webservers
-  gather_facts: no
-  tasks:
-    - name: Пинг до удалённого хоста
-      ping:
+- name: Check decrypted file
+  hosts: localhost
+  gather_facts: false
 
-    - name: Подключение успешно
+  vars:
+    decrypted_key_dir: "./tmp/"      # Directory to save decrypted ssh_private_key
+    decrypted_key_path: "{{ decrypted_key_dir }}/id_rsa"
+
+  tasks:
+    - name: Check if decrypted ssh key file exists
+      stat:
+        path: "{{ decrypted_key_path }}"
+      register: key_file_stat
+
+    - name: Read file content if exists
+      slurp:
+        path: "{{ decrypted_key_path }}"
+      register: key_file_content
+      when: key_file_stat.stat.exists
+
+    - name: Show decrypted ssh key content (base64 encoded)
       debug:
-        msg: "Подключение к {{ inventory_hostname }} успешно!"
+        msg: "{{ key_file_content.content | b64decode}}"
+      when: key_file_stat.stat.exists
+
+    - name: Show message if file does not exist
+      debug:
+        msg: "File {{ decrypted_key_path }} does not exist"
+      when: not key_file_stat.stat.exists
