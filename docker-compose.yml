@@ -1,6 +1,8 @@
 services:
   ansible-actualizer.dev:
-    image: node:22
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ansible-actualizer.dev
     working_dir: /app
     volumes:
