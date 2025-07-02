@@ -1,0 +1,11 @@
+---
+- name: Проверка соединения с хостами
+  hosts: webservers
+  gather_facts: no
+  tasks:
+    - name: Пинг до удалённого хоста
+      ping:
+
+    - name: Подключение успешно
+      debug:
+        msg: "Подключение к {{ inventory_hostname }} успешно!"
