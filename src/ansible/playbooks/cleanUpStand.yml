@@ -4,7 +4,7 @@
   gather_facts: false
 
   vars:
-    decrypted_key_dir: "./tmp/"      # Directory with saved decrypted ssh_private_key
+    decrypted_key_dir: "./tmp" # Directory with saved decrypted ssh_private_key
     decrypted_key_path: "{{ decrypted_key_dir }}/id_rsa"
 
   tasks:

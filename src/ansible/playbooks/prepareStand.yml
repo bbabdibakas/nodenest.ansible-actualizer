@@ -6,7 +6,7 @@
     - "../vault/vault.yml" # Encrypted ssh_private_key
 
   vars:
-    decrypted_key_dir: "./tmp/"      # Directory to save decrypted ssh_private_key
+    decrypted_key_dir: "./tmp" # Directory to save decrypted ssh_private_key
     decrypted_key_path: "{{ decrypted_key_dir }}/id_rsa"
 
   tasks:
@@ -18,6 +18,6 @@
 
     - name: Write decrypted ssh key to file
       copy:
-        content: "{{ ssh_private_key }}"
+        content: "{{ ssh_private_key | regex_replace('^\\s+', '') }}"
         dest: "{{ decrypted_key_path }}"
         mode: '0600'

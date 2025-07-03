@@ -1,30 +1,41 @@
 ---
-- name: Check decrypted file
-  hosts: localhost
+- name: Actualize ABS
+  hosts: webservers
   gather_facts: false
-
   vars:
-    decrypted_key_dir: "./tmp/"      # Directory to save decrypted ssh_private_key
-    decrypted_key_path: "{{ decrypted_key_dir }}/id_rsa"
+    config_path: /var/www/abs/config.js # ABS config file
+
+  pre_tasks:
+    - name: Check if host available for connection
+      ping:
+      register: ping_result
+      ignore_unreachable: yes
+      ignore_errors: yes
+
+    - name: Remove unreachable hosts out of execution
+      meta: end_host
+      when: ping_result.unreachable is defined and ping_result.unreachable
 
   tasks:
-    - name: Check if decrypted ssh key file exists
+    - name: Ensure that {{ config_path }} exist
       stat:
-        path: "{{ decrypted_key_path }}"
-      register: key_file_stat
+        path: "{{ config_path }}"
+      register: config_file
 
-    - name: Read file content if exists
+    - name: Read {{ config_path }}
       slurp:
-        path: "{{ decrypted_key_path }}"
-      register: key_file_content
-      when: key_file_stat.stat.exists
+        src: "{{ config_path }}"
+      when: config_file.stat.exists
+      register: file_content
 
-    - name: Show decrypted ssh key content (base64 encoded)
-      debug:
-        msg: "{{ key_file_content.content | b64decode}}"
-      when: key_file_stat.stat.exists
+    - name: Extract dialog360 block from {{ config_path }}
+      set_fact:
+        dialog_block: "{{ (decoded_content | regex_search('dialog360:\\s\\{[^\\}]*\\}', '\\0')) }}"
+      when: config_file.stat.exists
+      vars:
+        decoded_content: "{{ file_content.content | b64decode }}"
 
-    - name: Show message if file does not exist
+    - name: Show dialog360 block
       debug:
-        msg: "File {{ decrypted_key_path }} does not exist"
-      when: not key_file_stat.stat.exists
+        msg: "{{ dialog_block }}"
+      when: config_file.stat.exists and dialog_block is defined
