@@ -2,26 +2,33 @@ import path from "path";
 import {EnvService} from "./services/envService";
 import {AnsiblePlaybookService} from "./services/ansiblePlaybookService";
 
-const prepareStandPlaybookPath = path.join(__dirname, "ansible", "playbooks", "prepareStand.yml");
-const mainPlaybookPath = path.join(__dirname, "ansible", "playbooks", "actualizeABS.yml");
-const cleanUpStandPlaybookPath = path.join(__dirname, "ansible", "playbooks", "cleanUpStand.yml");
-const ansibleConfig = path.join(__dirname, "ansible", "ansible.cfg");
+export enum AllowedPlaybook {
+    PrepareStand = 'prepare_stand',
+    Main = 'main',
+    CleanUpStand = 'clean_up_stand'
+}
+
+const playbookMap: Record<AllowedPlaybook, string> = {
+    [AllowedPlaybook.PrepareStand]: path.join(__dirname, "ansible", "playbooks", "prepareStand.yml"),
+    [AllowedPlaybook.Main]: path.join(__dirname, "ansible", "playbooks", "actualizeABS.yml"),
+    [AllowedPlaybook.CleanUpStand]: path.join(__dirname, "ansible", "playbooks", "cleanUpStand.yml"),
+}
 
 const envService = new EnvService()
-const prepareStandPlaybookService = new AnsiblePlaybookService(envService, prepareStandPlaybookPath, ansibleConfig)
-const mainPlaybookService = new AnsiblePlaybookService(envService, mainPlaybookPath, ansibleConfig)
-const cleanUpStandPlaybookService = new AnsiblePlaybookService(envService, cleanUpStandPlaybookPath, ansibleConfig)
+const ansibleConfigPath = path.resolve(__dirname, "ansible", "ansible.cfg");
+const ansiblePlaybookService = new AnsiblePlaybookService(envService, ansibleConfigPath)
 
 const start = async () => {
-    try {
-        const data1 = await prepareStandPlaybookService.run();
-        console.log(data1)
-        const data2 = await mainPlaybookService.run();
-        console.log(data2)
-        const data3 = await cleanUpStandPlaybookService.run();
-        console.log(data3)
-    } catch (error) {
-        console.error('Ошибка при запуске ansible:', error);
+    for (const playbook of Object.values(AllowedPlaybook)) {
+        console.log(`Running playbook: ${playbook}`)
+        try {
+            const path = playbookMap[playbook]
+            const data = await ansiblePlaybookService.run(path)
+            console.log(data)
+        } catch (error) {
+            console.error(`Error running playbook: ${playbook}`, error);
+            break;
+        }
     }
 }
 
