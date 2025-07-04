@@ -1,32 +1,42 @@
 import {AnsibleOutput} from "./types/AnsibleOutput";
+import {Report} from "./types/Report";
 
 export class ReportService {
     constructor() {
     }
 
     build(data: AnsibleOutput) {
-        const unreachableServers: string[] = []
+        const report: Report[] = []
 
         for (const play of data.plays) {
             for (const task of play.tasks) {
-                console.log('TASK: ',task.task.name);
-
                 if (task.task.name === 'Check if host available for connection') {
                     for (const [host, result] of Object.entries(task.hosts)) {
                         if (result.unreachable) {
-                            unreachableServers.push(host)
+                            report.push({
+                                name: host,
+                                isUnreachable: true,
+                                healthStatus: null
+                            })
                         }
                     }
                 }
 
-                if (task.task.name === 'Print dialog360 health status') {
+                if (task.task.name === 'Debug health_status response') {
                     for (const [host, result] of Object.entries(task.hosts)) {
-                        console.log(result.msg)
+                        report.push({
+                            name: host,
+                            isUnreachable: false,
+                            healthStatus: {
+                                status: result.health_check_response.status,
+                                data: result.health_check_response.json
+                            }
+                        })
                     }
                 }
             }
         }
 
-        console.log(unreachableServers)
+        return report
     }
 }

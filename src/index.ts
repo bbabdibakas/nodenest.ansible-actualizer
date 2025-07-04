@@ -2,6 +2,7 @@ import path from "path";
 import {EnvService} from "./services/envService";
 import {AnsiblePlaybookService} from "./services/ansiblePlaybookService";
 import {ReportService} from "./services/reportService";
+import {Report} from "./services/types/Report";
 
 export enum AllowedPlaybook {
     PrepareStand = 'prepare_stand',
@@ -21,20 +22,24 @@ const ansiblePlaybookService = new AnsiblePlaybookService(envService, ansibleCon
 const reportService = new ReportService()
 
 const start = async () => {
+    let report: Report[] = []
+
     for (const playbook of Object.values(AllowedPlaybook)) {
-        console.log(`Running playbook: ${playbook}`)
+        console.log(`Running playbook: ${playbook}..`)
         try {
             const path = playbookMap[playbook]
             const data = await ansiblePlaybookService.run(path)
 
             if (playbook === AllowedPlaybook.Main) {
-                reportService.build(data)
+                report = reportService.build(data)
             }
         } catch (error) {
             console.error(`Error running playbook: ${playbook}`, error);
             break;
         }
     }
+
+    console.log(report)
 }
 
 void start()
