@@ -3,7 +3,9 @@
   hosts: webservers
   gather_facts: false
   vars:
-    config_path: /var/www/abs/config.js # ABS config file
+    config_path: "/var/www/abs/config.js" # ABS config file
+    log_dir: "./logs"
+    unreachable_log_path: "{{ log_dir }}/unreachable.log"
 
   pre_tasks:
     - name: Check if host available for connection
@@ -35,7 +37,26 @@
       vars:
         decoded_content: "{{ file_content.content | b64decode }}"
 
-    - name: Show dialog360 block
+    - name: Extract api and phone from dialog360 block
+      set_fact:
+        dialog_api_key: "{{ dialog_block | regex_search(\"api_key:\\s'([^']+)'\", '\\1') }}"
+      when: dialog_block is defined
+
+    - name: Make request to dialog360 health_status endpoint
+      uri:
+        url: "https://waba-v2.360dialog.io/health_status"
+        method: GET
+        status_code: 200,201,202,203,204,403
+        headers:
+          D360-API-KEY: "{{ dialog_api_key[0] }}"
+          Content-Type: application/json
+        return_content: yes
+      register: health_response
+      when: dialog_api_key is defined and dialog_api_key | length > 0
+
+    - name: Print dialog360 health status
       debug:
-        msg: "{{ dialog_block }}"
-      when: config_file.stat.exists and dialog_block is defined
+        msg: "{{ health_response.content }}"
+      when: health_response is defined
+
+
