@@ -6,9 +6,15 @@
   vars:
     decrypted_key_dir: "./tmp" # Directory with saved decrypted ssh_private_key
     decrypted_key_path: "{{ decrypted_key_dir }}/id_rsa"
+    inventory_path: "../inventories/actualize.ini"
 
   tasks:
     - name: Remove decrypted ssh key file
       file:
         path: "{{ decrypted_key_path }}"
+        state: absent
+
+    - name: Remove inventory file
+      file:
+        path: "{{ inventory_path }}"
         state: absent

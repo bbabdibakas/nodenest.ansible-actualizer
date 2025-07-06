@@ -1,19 +1,28 @@
 import {AnsibleOutput} from "./types/AnsibleOutput";
-import {Report} from "./types/Report";
+
+export interface Report {
+    name: string;
+    isUnreachable: boolean;
+    healthStatus: {
+        status: number;
+        data: any;
+    } | null
+}
 
 export class ReportService {
+    private readonly report: Report[]
+
     constructor() {
+        this.report = []
     }
 
     build(data: AnsibleOutput) {
-        const report: Report[] = []
-
         for (const play of data.plays) {
             for (const task of play.tasks) {
                 if (task.task.name === 'Check if host available for connection') {
                     for (const [host, result] of Object.entries(task.hosts)) {
                         if (result.unreachable) {
-                            report.push({
+                            this.report.push({
                                 name: host,
                                 isUnreachable: true,
                                 healthStatus: null
@@ -22,9 +31,21 @@ export class ReportService {
                     }
                 }
 
+                if (task.task.name === 'Debug dialog360.use') {
+                    for (const [host, result] of Object.entries(task.hosts)) {
+                        if (!result.dialog_use) {
+                            this.report.push({
+                                name: host,
+                                isUnreachable: false,
+                                healthStatus: null
+                            })
+                        }
+                    }
+                }
+
                 if (task.task.name === 'Debug health_status response') {
                     for (const [host, result] of Object.entries(task.hosts)) {
-                        report.push({
+                        this.report.push({
                             name: host,
                             isUnreachable: false,
                             healthStatus: {
@@ -37,6 +58,6 @@ export class ReportService {
             }
         }
 
-        return report
+        return this.report
     }
 }
