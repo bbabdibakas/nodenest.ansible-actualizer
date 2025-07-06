@@ -1,7 +1,8 @@
 import path from "path";
 import {EnvService} from "./services/envService";
 import {AnsibleService, AnsibleServicePaths} from "./services/ansibleService";
-import {Report, ReportService} from "./services/reportService";
+import {ReportService} from "./services/reportService";
+import {ApiService} from "./services/apiService";
 
 export enum AllowedPlaybook {
     PrepareStand = 'prepare_stand',
@@ -23,29 +24,11 @@ const ansibleServicePaths: AnsibleServicePaths = {
 
 const envService = new EnvService()
 const ansibleService = new AnsibleService(envService, ansibleServicePaths)
+const apiService = new ApiService(envService)
 const reportService = new ReportService()
 
 const start = async () => {
-    let report: Report[] = []
-
-    const hosts = [
-        {
-            name: "chat-bot1088",
-            ip: "116.203.235.155"
-        },
-        {
-            name: "chat-bot1053",
-            ip: "78.46.192.5"
-        },
-        {
-            name: "chat-bot10666",
-            ip: "78.1.11.11"
-        },
-        {
-            name: "chat-bot1005m1",
-            ip: "78.46.182.173"
-        }
-    ]
+    let hosts = await apiService.getServers()
     ansibleService.buildInventoryFile(hosts)
 
     for (const playbook of Object.values(AllowedPlaybook)) {
@@ -55,7 +38,7 @@ const start = async () => {
             const data = await ansibleService.runPlaybook(path)
 
             if (playbook === AllowedPlaybook.Main) {
-                report = reportService.build(data)
+                hosts = reportService.build(data, hosts)
             }
         } catch (error) {
             console.error(`Error running playbook: ${playbook}`, error);
@@ -63,7 +46,7 @@ const start = async () => {
         }
     }
 
-    console.log(report)
+    console.log(hosts)
 }
 
 void start()

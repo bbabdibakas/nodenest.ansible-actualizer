@@ -1,63 +1,50 @@
 import {AnsibleOutput} from "./types/AnsibleOutput";
-
-export interface Report {
-    name: string;
-    isUnreachable: boolean;
-    healthStatus: {
-        status: number;
-        data: any;
-    } | null
-}
+import {Server} from "./apiService";
 
 export class ReportService {
-    private readonly report: Report[]
-
     constructor() {
-        this.report = []
     }
 
-    build(data: AnsibleOutput) {
+    build(data: AnsibleOutput, servers: Server[]) {
         for (const play of data.plays) {
             for (const task of play.tasks) {
                 if (task.task.name === 'Check if host available for connection') {
                     for (const [host, result] of Object.entries(task.hosts)) {
                         if (result.unreachable) {
-                            this.report.push({
-                                name: host,
-                                isUnreachable: true,
-                                healthStatus: null
-                            })
+                            const server = servers.find(s => s.name === host);
+                            if (server) {
+                                server.isUnreachable = result.unreachable
+                            }
                         }
                     }
                 }
 
-                if (task.task.name === 'Debug dialog360.use') {
+                if (task.task.name === 'Debug config_file') {
                     for (const [host, result] of Object.entries(task.hosts)) {
-                        if (!result.dialog_use) {
-                            this.report.push({
-                                name: host,
-                                isUnreachable: false,
-                                healthStatus: null
-                            })
+                        const server = servers.find(s => s.name === host);
+                        if (result.config_file.stat.exists) {
+                            if (server) {
+                                server.isConfigFileExists = result.config_file.stat.exists
+                            }
                         }
                     }
                 }
+
 
                 if (task.task.name === 'Debug health_status response') {
                     for (const [host, result] of Object.entries(task.hosts)) {
-                        this.report.push({
-                            name: host,
-                            isUnreachable: false,
-                            healthStatus: {
+                        const server = servers.find(s => s.name === host);
+                        if (server) {
+                            server.healthStatus = {
                                 status: result.health_check_response.status,
                                 data: result.health_check_response.json
                             }
-                        })
+                        }
                     }
                 }
             }
         }
 
-        return this.report
+        return servers
     }
 }

@@ -22,6 +22,14 @@
         path: "{{ config_path }}"
       register: config_file
 
+    - name: Debug config_file
+      debug:
+        var: config_file
+
+    - name: Remove non dialog360 hosts out of execution
+      meta: end_host
+      when: not config_file.stat.exists
+
     - name: Read {{ config_path }}
       slurp:
         src: "{{ config_path }}"

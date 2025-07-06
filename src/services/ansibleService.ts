@@ -2,11 +2,7 @@ import {EnvService} from "./envService";
 import fs from "fs";
 import {AnsibleOutput} from "./types/AnsibleOutput";
 import {exec} from "child_process";
-
-interface Host {
-    name: string
-    ip: string
-}
+import {Server} from "./apiService";
 
 export interface AnsibleServicePaths {
     inventory: string,
@@ -21,11 +17,11 @@ export class AnsibleService {
     ) {
     }
 
-    buildInventoryFile(hosts: Host[]) {
+    buildInventoryFile(hosts: Server[]) {
         const lines = ['[webservers]'];
 
         for (const host of hosts) {
-            lines.push(`${host.name} ansible_host=${host.ip} ansible_ssh_private_key_file=${this.ansiblePaths.privateKey}`);
+            lines.push(`${host.name} ansible_host=${host.publicNetIPv4.ip} ansible_ssh_private_key_file=${this.ansiblePaths.privateKey}`);
         }
 
         const inventoryContent = lines.join('\n');
