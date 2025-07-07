@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ansible-actualizer.dev
+    container_name: nodenest.ansible-actualizer.dev
     working_dir: /app
     volumes:
       - .:/app

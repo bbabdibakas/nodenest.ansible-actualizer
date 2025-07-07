@@ -1,22 +1,6 @@
 import {EnvService} from "./envService";
 import axios, {AxiosInstance} from "axios";
-
-export interface Server {
-    id: number;
-    name: string;
-    status: 'initializing' | 'running' | 'deleting' | 'offline' | 'starting' | 'stopping' | 'error';
-    created: string;
-    publicNetIPv4: {
-        ip: string;
-        blocked: boolean;
-    };
-    isUnreachable?: boolean;
-    isConfigFileExists: boolean
-    healthStatus?: {
-        status: number;
-        data: any;
-    }
-}
+import {HetznerServer} from "./types/HetznerServer";
 
 export class ApiService {
     private api: AxiosInstance
@@ -25,7 +9,7 @@ export class ApiService {
         private envService: EnvService,
     ) {
         this.api = axios.create({
-            baseURL: `${this.envService.BACKEND_API_HOST}/api/v1/servers`,
+            baseURL: `${this.envService.BACKEND_API_HOST}/api/v1/hosts`,
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
@@ -36,19 +20,21 @@ export class ApiService {
 
     async getServers() {
         try {
-            const response = await this.api.get<Server[]>('');
+            const response = await this.api.get<HetznerServer[]>('/hetzner');
             return response.data;
         } catch (err) {
             throw new Error(`Failed to get servers: ${err}`);
         }
     }
 
-    async saveServers(actualizedServers: Server[]) {
+    async saveServers(actualizedServers: HetznerServer[]) {
         try {
-            const response = await this.api.post('', actualizedServers);
+            const response = await this.api.post<HetznerServer>('/actualize', {
+                hosts: actualizedServers,
+            });
             return response.data;
         } catch (err) {
-            throw new Error(`Failed to get servers: ${err}`);
+            throw new Error(`Failed to save servers: ${err}`);
         }
     }
 }

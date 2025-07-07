@@ -46,7 +46,8 @@ const start = async () => {
         }
     }
 
-    console.log(hosts)
+    const actualizedHosts = await apiService.saveServers(hosts)
+    console.log(actualizedHosts)
 }
 
 void start()

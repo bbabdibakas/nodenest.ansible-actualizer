@@ -1,11 +1,11 @@
 import {AnsibleOutput} from "./types/AnsibleOutput";
-import {Server} from "./apiService";
+import {HetznerServer} from "./types/HetznerServer";
 
 export class ReportService {
     constructor() {
     }
 
-    build(data: AnsibleOutput, servers: Server[]) {
+    build(data: AnsibleOutput, servers: HetznerServer[]) {
         for (const play of data.plays) {
             for (const task of play.tasks) {
                 if (task.task.name === 'Check if host available for connection') {
@@ -35,10 +35,7 @@ export class ReportService {
                     for (const [host, result] of Object.entries(task.hosts)) {
                         const server = servers.find(s => s.name === host);
                         if (server) {
-                            server.healthStatus = {
-                                status: result.health_check_response.status,
-                                data: result.health_check_response.json
-                            }
+                            server.wabaHealthStatusCode = result.health_check_response.status
                         }
                     }
                 }
